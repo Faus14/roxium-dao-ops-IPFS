@@ -1,47 +1,47 @@
-# Helia + Storacha (flujo básico)
+# Helia + Storacha (basic flow)
 
-Este proyecto es un ejemplo mínimo de cómo:
+This project is a minimal example of how to:
 
-- Subir un archivo a IPFS usando [Helia](https://github.com/ipfs/helia) y obtener un **CID**.
-- Pinear ese archivo en la red de Storacha usando su **CLI**, para obtener una URL pública estable.
+- Upload a file to IPFS using [Helia](https://github.com/ipfs/helia) and obtain a **CID**.
+- Pin that file on the Storacha network using its **CLI**, to get a stable public URL.
 
-## Requisitos
+## Requirements
 
-- Node.js 18 o superior (recomendado)
+- Node.js 18 or higher (recommended)
 - npm
 
-## Instalación (proyecto Helia)
+## Installation (Helia project)
 
-En la carpeta del proyecto:
+From the project folder:
 
 ```bash
 npm install
 ```
 
-Esto instalará `helia` y `@helia/unixfs`.
+This will install `helia` and `@helia/unixfs`.
 
-## Uso: subir archivo a IPFS con Helia
+## Usage: upload a file to IPFS with Helia
 
-El script principal es `upload-file.js`. Acepta como argumento la ruta a un archivo local:
+The main script is `upload-file.js`. It accepts a local file path as an argument:
 
 ```bash
-# Opción 1: usando npm script
-npm run start -- ./ruta/a/tu-archivo.ext
+# Option 1: using npm script
+npm run start -- ./path/to/your-file.ext
 
-# Opción 2: directamente con node
-node upload-file.js ./ruta/a/tu-archivo.ext
+# Option 2: directly with node
+node upload-file.js ./path/to/your-file.ext
 ```
 
-Si no pasas argumento, por defecto intentará usar `./ejemplo.pdf`.
+If you don't pass an argument, it will try to use `./ejemplo.pdf` by default.
 
-### Qué hace el script `upload-file.js`
+### What the `upload-file.js` script does
 
-1. Crea un nodo Helia local.
-2. Lee el archivo indicado desde el sistema de archivos.
-3. Lo añade a IPFS usando UnixFS.
-4. Imprime:
-   - El CID del contenido.
-   - Una URL de gateway pública para intentar acceder al contenido, por ejemplo:
+1. Creates a local Helia node.
+2. Reads the given file from the filesystem.
+3. Adds it to IPFS using UnixFS.
+4. Prints:
+   - The content CID.
+   - A public gateway URL you can try in a browser, for example:
 
 ```text
 📦 Archivo subido a IPFS
@@ -49,42 +49,42 @@ Si no pasas argumento, por defecto intentará usar `./ejemplo.pdf`.
 🌍 Gateway: https://ipfs.io/ipfs/baf...
 ```
 
-## Entendiendo el CID y la URL de Helia
+## Understanding the CID and the Helia URL
 
-- **CID**: es el identificador de contenido; siempre será el mismo para el mismo contenido con el mismo algoritmo de hash.
-- **URL de gateway**: `https://ipfs.io/ipfs/<CID>` es una forma conveniente de pedir ese contenido a la red IPFS a través de un gateway HTTP público.
+- **CID**: the content identifier; it will always be the same for the same content when using the same hash algorithm.
+- **Gateway URL**: `https://ipfs.io/ipfs/<CID>` is a convenient way to request that content from the IPFS network via a public HTTP gateway.
 
-El hecho de que tengas un CID **no garantiza** que un gateway público pueda recuperar el contenido inmediatamente. Depende de que haya nodos en la red que:
+Having a CID **does not guarantee** that a public gateway can retrieve the content immediately. It depends on the presence of nodes that:
 
-- Guarden ese contenido, y
-- Sean accesibles desde Internet.
+- Store that content, and
+- Are reachable from the public internet.
 
-## Errores típicos de recuperación (504 / no providers)
+## Typical retrieval errors (504 / no providers)
 
-Puede que al abrir la URL del gateway veas algo como:
+When opening the gateway URL you might see something like:
 
 > 504 Gateway Timeout: no providers found for the CID
 
-Eso significa que el gateway ha preguntado a la red "¿quién tiene este CID?" y no ha encontrado ningún nodo accesible que lo proporcione dentro del tiempo límite.
+This means the gateway asked the network "who has this CID?" and did not find any reachable node providing it within the timeout.
 
-Esto suele pasar cuando:
+This usually happens when:
 
-- Solo tu nodo local tiene el contenido.
-- Tu nodo está detrás de un router/NAT/firewall o ya se apagó.
-- No hay ningún servicio de pinning u otro nodo que también tenga los bloques.
+- Only your local node has the content.
+- Your node is behind a router/NAT/firewall or is already stopped.
+- There is no pinning service or other node also storing those blocks.
 
-### Cómo mitigarlo
+### How to mitigate it
 
-1. **Verifica localmente que el CID funciona**
+1. **Verify locally that the CID works**
 
-   Puedes leer el contenido desde tu propia máquina usando Helia:
+   You can read the content locally using Helia:
 
    ```bash
    node - <<'EOF'
    import { createHelia } from 'helia'
    import { unixfs } from '@helia/unixfs'
 
-   const cidStr = 'PON_AQUI_TU_CID'
+   const cidStr = 'PUT_YOUR_CID_HERE'
 
    const helia = await createHelia()
    const fsUnix = unixfs(helia)
@@ -95,85 +95,85 @@ Esto suele pasar cuando:
    }
 
    const content = Buffer.concat(chunks).toString()
-   console.log('Contenido leído desde Helia local:\n', content)
+   console.log('Content read from local Helia node:\n', content)
 
    await helia.stop()
    EOF
    ```
 
-   Si ves tu contenido, el CID es correcto; el problema es solo de descubrimiento/provisión en la red.
+   If you see your content, the CID is correct; the problem is just network discovery/providing.
 
-2. **Mantén el nodo corriendo un rato**
+2. **Keep your node running for a while**
 
-   En lugar de crear y parar el nodo inmediatamente tras subir el archivo, puedes mantenerlo encendido unos minutos para que anuncie/proporcione el contenido en el DHT. Cuanto más tiempo esté online y accesible, más fácil será que los gateways lo encuentren.
+   Instead of creating and stopping the node immediately after uploading, you can keep it running for a few minutes so it announces/provides the content on the DHT. The longer it stays online and reachable, the easier for gateways to find it.
 
-3. **Usa un pinning service (Storacha)**
+3. **Use a pinning service (Storacha)**
 
-   Para que el contenido sea accesible de forma estable desde cualquier lugar (sin depender de tu nodo local), usamos Storacha como servicio de pinning. Storacha guarda el contenido en su red (sobre Filecoin + hot storage) y expone el contenido vía gateways como `storacha.link` o `w3s.link`, de forma que los gateways públicos suelen poder recuperar el CID.
+   To make content reliably accessible from anywhere (without depending on your local node), we use Storacha as a pinning service. Storacha stores the content in its network (on top of Filecoin + hot storage) and exposes it via gateways like `storacha.link` or `w3s.link`, so public gateways typically can retrieve the CID.
 
-4. **Probar otros gateways**
+4. **Try other gateways**
 
-   A veces, distintos gateways tienen distinta visibilidad y cachés. Puedes probar, por ejemplo:
+   Different gateways may have different visibility and caches. You can try, for example:
 
    - `https://w3s.link/ipfs/<CID>`
    - `https://dweb.link/ipfs/<CID>`
 
-   Si todos devuelven "no providers found", significa que nadie accesible en la red está anunciando ese CID.
+   If they all return "no providers found", it means nobody reachable on the network is announcing that CID.
 
-## Pinear archivos con Storacha (CLI)
+## Pin files with Storacha (CLI)
 
-Además de Helia, usamos la CLI de Storacha para pinear archivos y obtener una URL pública estable.
+Besides Helia, we use the Storacha CLI to pin files and get a stable public URL.
 
-### Requisitos Storacha
+### Storacha requirements
 
-- Node 18+ (ya lo tienes si usas Helia aquí).
-- CLI instalada globalmente:
+- Node 18+ (already satisfied if you are using Helia here).
+- CLI installed globally:
 
 ```bash
 npm install -g @storacha/cli
 storacha --help
 ```
 
-### 1. Login y plan de cuenta
+### 1. Login and account plan
 
-Primero hay que autorizar un agente y asociarlo a una cuenta con plan (por ejemplo Starter):
+First authorize an agent and associate it with an account that has a plan (e.g. Starter):
 
 ```bash
-storacha login tu-email@example.com
+storacha login your-email@example.com
 ```
 
-Sigue el enlace que te llega por email, elige un plan y espera a que se configure. Luego puedes comprobar el plan:
+Follow the link you receive by email, choose a plan and wait for it to be configured. Then you can check the plan:
 
 ```bash
 storacha plan get
 ```
 
-### 2. Crear y usar un Space
+### 2. Create and use a Space
 
-Todo lo que subas se asocia a un **Space**. Un space es como un "bucket" identificado por un DID:
+Everything you upload is associated with a **Space**. A space is like a bucket identified by a DID:
 
 ```bash
 storacha space create Documents
 storacha space ls
 ```
 
-La salida se verá algo como:
+The output will look like:
 
 ```text
 * did:key:z6Mk... Documents
 ```
 
-El `*` indica cuál es el space activo.
+The `*` indicates which space is currently active.
 
-Si hace falta, puedes provisionar el space (asociarlo a tu cuenta/plan):
+If needed, you can provision the space (associate it with your account/plan):
 
 ```bash
 storacha space provision Documents
 ```
 
-### 3. Subir (pinear) tu archivo
+### 3. Upload (pin) your file
 
-Desde la carpeta del proyecto (o cualquier otra):
+From the project folder (or anywhere else):
 
 ```bash
 cd /Users/faustosaludas/Downloads/helia
@@ -181,7 +181,7 @@ cd /Users/faustosaludas/Downloads/helia
 storacha up ./ejemplo.txt
 ```
 
-Ejemplo de salida real:
+Example of real output:
 
 ```text
 🐔 Agent was authorized by did:mailto:gmail.com:fausaludas14
@@ -192,29 +192,29 @@ Ejemplo de salida real:
 🐔 https://storacha.link/ipfs/bafybeicn2wobdvgmx4wlqadqg7ybzbnnxogfuejbm4zgocypzckivx2jsy
 ```
 
-Aquí:
+Here:
 
-- El **CID** es `bafybeicn2wobdvgmx4wlqadqg7ybzbnnxogfuejbm4zgocypzckivx2jsy`.
-- La URL `https://storacha.link/ipfs/<CID>` te lleva al contenido en el gateway de Storacha.
-- Muchas veces tendrás también URLs de tipo subdominio, por ejemplo:
+- The **CID** is `bafybeicn2wobdvgmx4wlqadqg7ybzbnnxogfuejbm4zgocypzckivx2jsy`.
+- The URL `https://storacha.link/ipfs/<CID>` takes you to the content on the Storacha gateway.
+- You may also get subdomain-style URLs, for example:
 
    - `https://bafybeicn2wobdvgmx4wlqadqg7ybzbnnxogfuejbm4zgocypzckivx2jsy.ipfs.w3s.link/`
    - `https://bafybeicn2wobdvgmx4wlqadqg7ybzbnnxogfuejbm4zgocypzckivx2jsy.ipfs.w3s.link/ejemplo.txt`
 
-   Ambas apuntan al mismo CID, pero:
+   Both point to the same CID, but:
 
-   - la URL sin `/ejemplo.txt` apunta a la **raíz del DAG/directorio** asociado al CID;
-   - la URL con `/ejemplo.txt` apunta directamente al **archivo** dentro de ese directorio.
+   - the URL without `/ejemplo.txt` points to the **root of the DAG/directory** associated with the CID;
+   - the URL with `/ejemplo.txt` points directly to the **file** inside that directory.
 
-También puedes usar otros gateways IPFS, por ejemplo:
+You can also use other IPFS gateways, for example:
 
 ```text
 https://ipfs.io/ipfs/bafybeicn2wobdvgmx4wlqadqg7ybzbnnxogfuejbm4zgocypzckivx2jsy/ejemplo.txt
 ```
 
-### 4. Verificar el CID pineado con Helia
+### 4. Verify the pinned CID with Helia
 
-Puedes usar Helia para leer el mismo CID que pineó Storacha:
+You can use Helia to read the same CID that Storacha pinned:
 
 ```bash
 cd /Users/faustosaludas/Downloads/helia
@@ -234,18 +234,18 @@ for await (const chunk of fsUnix.cat(cidStr)) {
 }
 
 const content = Buffer.concat(chunks).toString()
-console.log('Contenido leído con Helia:\n', content)
+console.log('Content read with Helia:\n', content)
 
 await helia.stop()
 EOF
 ```
 
-Deberías ver el contenido original de `ejemplo.txt`.
+You should see the original contents of `ejemplo.txt`.
 
-## Notas finales
+## Final notes
 
-- Este proyecto está pensado como un ejemplo mínimo para entender cómo se conectan Helia (IPFS) y Storacha (pinning).
-- Para producción, considera:
-  - Manejar credenciales y spaces de Storacha de forma segura.
-  - Añadir registros persistentes (por ejemplo, una DB) para no perder el mapping entre `cid`, `filename`, `spaceDid`, etc.
-  - Mejorar la configuración de red/libp2p de Helia si lo vas a usar como nodo de larga duración.
+- This project is meant as a minimal example to understand how Helia (IPFS) and Storacha (pinning) work together.
+- For production usage, consider:
+  - Managing Storacha credentials and spaces securely.
+  - Adding persistent records (e.g. a database) so you don't lose the mapping between `cid`, `filename`, `spaceDid`, etc.
+  - Improving Helia's network/libp2p configuration if you plan to run it as a long-lived node.
