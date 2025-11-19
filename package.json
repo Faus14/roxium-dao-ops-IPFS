@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "start": "node upload-file.js"
+    "start": "node upload-file.js",
+    "arkiv:register": "node arkiv/register-upload.js"
   },
   "dependencies": {
     "@helia/unixfs": "^6.0.3",
