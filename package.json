@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "scripts": {
+    "start": "node upload-file.js"
+  },
+  "dependencies": {
+    "@helia/unixfs": "^6.0.3",
+    "helia": "^6.0.10"
+  }
+}
