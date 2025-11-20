@@ -1,3 +1,4 @@
+// src/api/routes/arkiv-proposal.routes.ts
 import { Router } from "express";
 import { z } from "zod";
 
@@ -9,7 +10,7 @@ import { bytesToString } from "@arkiv-network/sdk/utils";
 const router = Router();
 
 const CreateProposalSchema = z.object({
-  daoKey: z.string(),
+  daoKey: z.string().min(1),
   title: z.string().min(1),
   description: z.string().optional(),
   budget: z.number().optional(),
@@ -17,12 +18,38 @@ const CreateProposalSchema = z.object({
   status: z.enum(["open", "closed", "archived"]).default("open"),
 });
 
+/**
+ * Igual que en DAOs: intentamos extraer la key real de la entidad Arkiv.
+ */
+function extractEntityKey(entity: any): string | null {
+  if (!entity) return null;
+
+  if (typeof entity.entityKey === "string") return entity.entityKey;
+  if (typeof entity.key === "string") return entity.key;
+  if (typeof entity.id === "string") return entity.id;
+
+  // fallback: si alguna vez la guardaste como atributo
+  if (Array.isArray(entity.attributes)) {
+    const found = entity.attributes.find(
+      (a: any) => a && a.key === "entityKey"
+    );
+    if (found && typeof found.value === "string") {
+      return found.value;
+    }
+  }
+
+  return null;
+}
+
+// 🔧 helper: convierte entity Arkiv a algo JSON-friendly (INCLUYENDO entityKey)
 function normalizeEntity(entity: any) {
+  const entityKey = extractEntityKey(entity);
+
   const attrs: Record<string, string> = Object.fromEntries(
     (entity.attributes ?? []).map((a: any) => [a.key, a.value])
   );
 
-  let payload: any = null;
+  let payload: unknown = null;
   if (entity.payload) {
     const str = bytesToString(entity.payload as Uint8Array);
     try {
@@ -38,7 +65,7 @@ function normalizeEntity(entity: any) {
       : entity.expiresAtBlock ?? null;
 
   return {
-    entityKey: entity.entityKey as string,
+    entityKey, // 👈 esto ahora SIEMPRE viene en la respuesta
     attributes: attrs,
     payload,
     expiresAtBlock,
@@ -71,8 +98,11 @@ router.post("/", async (req, res) => {
       version: 1,
     });
 
+    console.log("✅ Proposal creada en Arkiv:", { entityKey, txHash });
+
     return res.status(201).json({
       proposalKey: entityKey,
+      daoKey,
       txHash,
     });
   } catch (err: any) {
