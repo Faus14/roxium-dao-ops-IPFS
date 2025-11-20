@@ -1,58 +1,114 @@
-import {
-  createWalletClient,
-  createPublicClient,
-  http,
-} from "@arkiv-network/sdk";
-import { privateKeyToAccount } from "@arkiv-network/sdk/accounts";
-import { mendoza } from "@arkiv-network/sdk/chains";
-import { stringToPayload, bytesToString } from "@arkiv-network/sdk/utils";
-import dotenv from "dotenv";
+// src/examples/arkiv-voting-board.ts
+import { walletClient, publicClient } from "../arkiv/clients.js";
+import { bytesToString } from "@arkiv-network/sdk/utils";
+import { eq } from "@arkiv-network/sdk/query";
 
-dotenv.config();
+import { createDaoOnArkiv } from "../arkiv/dao.js";
+import { createProposalOnArkiv } from "../arkiv/proposal.js";
+import { createTaskOnArkiv } from "../arkiv/task.js";
+import { createUserOnDaoMembership } from "../arkiv/membership.js";
 
 async function main() {
-  const rpcUrl =
-    process.env.ARKIV_RPC_URL || "https://mendoza.hoodi.arkiv.network/rpc";
-  const priv = process.env.ARKIV_PRIVATE_KEY as `0x${string}` | undefined;
+  const ownerAddress = walletClient.account.address;
+  const now = new Date();
 
-  if (!priv) {
-    throw new Error("Falta ARKIV_PRIVATE_KEY en el entorno (.env)");
+  console.log("👋 Owner address (wallet):", ownerAddress);
+
+  // 1) Crear DAO en Arkiv
+  const { entityKey: daoKey } = await createDaoOnArkiv({
+    id: 1,
+    createdAt: now.toISOString(),
+    name: "Roxium DAO Ops",
+    description: "DAO de operaciones / hackathon demo",
+    ownerAddress,
+    version: 1,
+  });
+
+  // 2) Membership OWNER (UserOnDao)
+  await createUserOnDaoMembership({
+    userAddress: ownerAddress,
+    daoKey,
+    role: "OWNER",
+    createdAt: now.toISOString(),
+    version: 1,
+  });
+
+  // 3) Proposal con deadline → se usa para TTL (expiresIn)
+  const deadline = new Date(now.getTime() + 1000 * 60 * 60).toISOString(); // +1h
+  const { entityKey: proposalKey } = await createProposalOnArkiv({
+    id: 1,
+    createdAt: now.toISOString(),
+    deadline,
+    title: "Definir horario de daily standup",
+    budget: 0,
+    description: "¿Movemos la daily a las 9:30?",
+    daoKey,
+    status: "open",
+    version: 1,
+  });
+
+  // 4) Algunas Tasks ligadas a la Proposal
+  await createTaskOnArkiv({
+    id: 1,
+    createdAt: now.toISOString(),
+    deadline,
+    title: "Relevar disponibilidad del equipo",
+    budget: 0,
+    description: "Enviar encuesta rápida al equipo.",
+    proposalKey,
+    daoKey,
+    status: "todo",
+    version: 1,
+  });
+
+  await createTaskOnArkiv({
+    id: 2,
+    createdAt: now.toISOString(),
+    deadline,
+    title: "Actualizar calendario de la DAO",
+    budget: 0,
+    description: "Actualizar eventos en el calendario compartido.",
+    proposalKey,
+    daoKey,
+    status: "todo",
+    version: 1,
+  });
+
+  // 5) Leer la Proposal de vuelta y mostrar el payload
+  const proposalEntity = await publicClient.getEntity(proposalKey);
+
+  if (!proposalEntity.payload) {
+    console.warn("⚠️ Proposal entity no tiene payload (payload undefined)");
+  } else {
+    const proposalPayload = bytesToString(proposalEntity.payload);
+    console.log("\n📝 Proposal payload (JSON):", proposalPayload);
   }
 
-  // 1) Clientes
-  const walletClient = createWalletClient({
-    chain: mendoza,
-    transport: http(rpcUrl),
-    account: privateKeyToAccount(priv),
-  });
+  // 6) Query de Tasks por proposalKey (mini Open Analytics)
+  const tasksQuery = await publicClient
+    .buildQuery()
+    .where([eq("type", "task"), eq("proposalKey", proposalKey)])
+    .fetch();
 
-  const publicClient = createPublicClient({
-    chain: mendoza,
-    transport: http(rpcUrl),
-  });
+  console.log(
+    `\n📊 Tasks encontradas para proposal ${proposalKey}:`,
+    tasksQuery.entities.length
+  );
 
-  console.log("👋 Address:", walletClient.account.address);
+  for (const e of tasksQuery.entities) {
+    if (!e.payload) {
+      console.warn("  • Task key =", e.entityKey, "sin payload (undefined)");
+      continue;
+    }
 
-  // 2) Escribir un pequeño registro on-chain (Hello World)
-  const { entityKey, txHash } = await walletClient.createEntity({
-    payload: stringToPayload("Hello, Arkiv!"),
-    contentType: "text/plain",
-    attributes: [{ key: "type", value: "hello" }],
-    expiresIn: 120, // segundos
-  });
+    const decoded = bytesToString(e.payload);
+    console.log("  • Task key =", e.entityKey, "payload =", decoded);
+  }
 
-  console.log("✅ Hello world creado en Arkiv");
-  console.log("🔑 Entity key:", entityKey);
-  console.log("🔗 Tx hash:", txHash);
-
-  // 3) Leerlo de vuelta y decodificar a string
-  const entity = await publicClient.getEntity(entityKey);
-  const data = bytesToString(entity.payload);
-
-  console.log("📦 Data almacenada:", data);
+  console.log("\n✅ Demo DAO / Proposal / Task terminada.");
 }
 
 main().catch((err) => {
-  console.error("❌ Error en Arkiv hello world:", err);
+  console.error("❌ Error en arkiv-voting-board demo:", err);
   process.exit(1);
 });
