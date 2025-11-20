@@ -96,13 +96,15 @@ async function main() {
   );
 
   for (const e of tasksQuery.entities) {
+    const key = (e as any).entityKey ?? (e as any).key ?? "<unknown>";
+
     if (!e.payload) {
-      console.warn("  • Task key =", e.entityKey, "sin payload (undefined)");
+      console.warn("  • Task key =", key, "sin payload (undefined)");
       continue;
     }
 
-    const decoded = bytesToString(e.payload);
-    console.log("  • Task key =", e.entityKey, "payload =", decoded);
+    const decoded = bytesToString(e.payload as Uint8Array);
+    console.log("  • Task key =", key, "payload =", decoded);
   }
 
   console.log("\n✅ Demo DAO / Proposal / Task terminada.");

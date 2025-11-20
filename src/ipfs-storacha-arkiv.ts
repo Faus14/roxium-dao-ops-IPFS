@@ -143,7 +143,7 @@ async function main() {
       { key: "cid", value: cid },
       { key: "gatewayUrl", value: gatewayUrl },
       { key: "filename", value: filename },
-      { key: "spaceDid", value: SPACE_DID },
+  { key: "spaceDid", value: SPACE_DID ?? "" },
     ],
     expiresIn: 60 * 60, // 1 hora, ajustable
   });
@@ -154,7 +154,9 @@ async function main() {
 
   // 4) Leerlo de vuelta desde Arkiv (opcional, para validar)
   const entity = await publicClient.getEntity(entityKey);
-  const decoded = bytesToString(entity.payload);
+  const decoded = entity.payload
+    ? bytesToString(entity.payload as Uint8Array)
+    : "<no-payload>";
 
   console.log("\n📦 Payload decodificado desde Arkiv:");
   console.log(decoded);

@@ -65,7 +65,8 @@ async function main() {
       ? bytesToString(ent.payload as Uint8Array)
       : undefined;
 
-    console.log("  • Task key:", ent.entityKey);
+  const key = (ent as any).entityKey ?? (ent as any).key ?? "<unknown>";
+  console.log("  • Task key:", key);
     console.log("    attrs:", attrs);
     if (payloadStr) {
       console.log("    payload:", payloadStr);
