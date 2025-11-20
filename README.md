@@ -1,9 +1,27 @@
-# Helia + Storacha (basic flow)
+# Roxium DAO Ops - IPFS Service
 
-This project is a minimal example of how to:
+Este proyecto implementa un servicio Node/TypeScript para subir archivos a IPFS usando Helia y registrar eventos en Arkiv.
 
-- Upload a file to IPFS using [Helia](https://github.com/ipfs/helia) and obtain a **CID**.
-- Pin that file on the Storacha network using its **CLI**, to get a stable public URL.
+## 📚 Documentación del Proyecto
+
+- **[ROADMAP.md](./ROADMAP.md)** - Roadmap completo y detallado de la implementación
+- **[PLAN_DE_ACCION.md](./PLAN_DE_ACCION.md)** - Plan de acción ejecutable paso a paso
+- **[EJEMPLOS_CODIGO.md](./EJEMPLOS_CODIGO.md)** - Ejemplos de código para guiar la implementación
+
+## 🎯 Objetivo
+
+Crear un servicio dedicado que:
+- Recibe archivos (PDFs e imágenes) desde el frontend
+- Los sube a IPFS usando Helia
+- Registra los CIDs y metadata en Arkiv (Mendoza testnet)
+- Actúa como el "blob store" descentralizado de la arquitectura
+
+## 📋 Estado Actual
+
+Este proyecto actualmente contiene ejemplos básicos de:
+
+- Upload a IPFS usando [Helia](https://github.com/ipfs/helia) y obtener un **CID**.
+- Pin de archivos en la red Storacha usando su **CLI**, para obtener una URL pública estable.
 
 ## Requirements
 

@@ -1,0 +1,1 @@
+{"version":3,"file":"arkiv.service.d.ts","sourceRoot":"","sources":["../../src/services/arkiv.service.ts"],"names":[],"mappings":"AACA,qBAAa,YAAY;IACvB,OAAO,CAAC,MAAM,CAAC,QAAQ,CAAe;IAEtC,MAAM,CAAC,WAAW,IAAI,YAAY;IAO5B,UAAU,CAAC,MAAM,EAAE,MAAM,EAAE,KAAK,EAAE,MAAM,EAAE,UAAU,EAAE,MAAM,GAAG,OAAO,CAAC,IAAI,CAAC;CAGnF"}

@@ -1,11 +1,48 @@
 {
+  "name": "roxium-dao-ops-ipfs",
+  "version": "1.0.0",
+  "description": "Servicio Node/TypeScript para subir archivos a IPFS usando Helia y registrar eventos en Arkiv",
   "type": "module",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "node upload-file.js",
-    "arkiv:register": "node arkiv/register-upload.js"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:dev": "nodemon --exec tsx src/index.ts",
+    "arkiv:register": "node arkiv/register-upload.js",
+    "upload:example": "node upload-file.js"
   },
+  "keywords": [
+    "ipfs",
+    "helia",
+    "arkiv",
+    "dao",
+    "blockchain"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@helia/unixfs": "^6.0.3",
-    "helia": "^6.0.10"
+    "@helia/unixfs": "^2.0.0",
+    "@types/form-data": "^2.2.1",
+    "@types/node-fetch": "^2.6.13",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "form-data": "^4.0.5",
+    "helia": "^2.0.0",
+    "multer": "^1.4.5-lts.1",
+    "multiformats": "^13.4.1",
+    "node-fetch": "^3.3.2",
+    "toidentifier": "^1.0.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.11",
+    "@types/node": "^20.10.0",
+    "nodemon": "^3.0.2",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
   }
 }
