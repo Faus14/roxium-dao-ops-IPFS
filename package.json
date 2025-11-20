@@ -10,7 +10,9 @@
     "start": "node dist/index.js",
     "start:dev": "nodemon --exec tsx src/index.ts",
     "arkiv:register": "node arkiv/register-upload.js",
-    "upload:example": "node upload-file.js"
+    "upload:example": "node upload-file.js",
+    "test:ipfs:hola": "tsx src/test-ipfs-hola.ts",
+    "test:ipfs:helia-arkiv": "tsx src/test-ipfs-helia-storacha-arkiv.ts"
   },
   "keywords": [
     "ipfs",

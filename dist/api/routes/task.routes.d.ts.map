@@ -1,1 +1,1 @@
-{"version":3,"file":"task.routes.d.ts","sourceRoot":"","sources":["../../../src/api/routes/task.routes.ts"],"names":[],"mappings":"AAGA,QAAA,MAAM,MAAM,4CAAmB,CAAC;AAuBhC,eAAe,MAAM,CAAC"}
+{"version":3,"file":"task.routes.d.ts","sourceRoot":"","sources":["../../../src/api/routes/task.routes.ts"],"names":[],"mappings":"AAGA,QAAA,MAAM,MAAM,KAAmB,CAAC;AAuBhC,eAAe,MAAM,CAAC"}
