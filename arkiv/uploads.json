@@ -40,5 +40,12 @@
     "spaceDid": "did:key:z6MkfzjaPXye5EMSYuwZ6XBr642JnDq6nrgQ8QwtpLtLbsnd",
     "gatewayUrl": "https://storacha.link/ipfs/bafybeid43nyaujfhiuggxrugqcy5ne2okpfbgyydeuawdw5p5dsn33z2my",
     "uploadedAt": "2025-11-20T03:16:30.989Z"
+  },
+  {
+    "cid": "bafkreicronamk2wd234lxif2am75ytanuyvcmbkxorkrskybf2fu2nx2ay",
+    "filename": "ejemplo.txt",
+    "spaceDid": "did:key:z6MkfzjaPXye5EMSYuwZ6XBr642JnDq6nrgQ8QwtpLtLbsnd",
+    "gatewayUrl": "https://storacha.link/ipfs/bafybeid43nyaujfhiuggxrugqcy5ne2okpfbgyydeuawdw5p5dsn33z2my",
+    "uploadedAt": "2025-11-20T04:04:06.098Z"
   }
 ]
