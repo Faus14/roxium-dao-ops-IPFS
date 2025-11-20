@@ -1,18 +1,18 @@
 export declare const config: {
     server: {
         port: number;
-        nodeEnv: any;
+        nodeEnv: string;
     };
     ipfs: {
-        dataDir: any;
+        dataDir: string;
     };
     arkiv: {
-        rpcUrl: any;
-        wsUrl: any;
-        privateKey: any;
+        rpcUrl: string | undefined;
+        wsUrl: string | undefined;
+        privateKey: string | undefined;
     };
     storacha: {
-        spaceDid: any;
+        spaceDid: string | undefined;
     };
 };
 //# sourceMappingURL=env.config.d.ts.map

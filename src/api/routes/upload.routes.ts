@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { IPFSService } from '../../services/ipfs.service.js';
+import { ArkivService } from '../../services/arkiv.service.js';
 import type { UploadResponse } from '../../types/document.types.js';
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const upload = multer({
 });
 
 const ipfsService = IPFSService.getInstance();
+const arkivService = ArkivService.getInstance();
 
 /**
  * POST /api/upload
@@ -67,7 +69,7 @@ router.post('/', upload.single('file'), async (req, res) => {
       req.file.mimetype
     );
 
-    // Construir respuesta
+    // Construir respuesta base
     const response: UploadResponse = {
       success: true,
       data: {
@@ -77,9 +79,28 @@ router.post('/', upload.single('file'), async (req, res) => {
         mimeType: ipfsResult.mimeType,
         gatewayUrl: ipfsResult.gatewayUrl,
         uploadedAt: ipfsResult.uploadedAt.toISOString(),
-        // arkivEntityId se agregará en Fase 5 cuando integremos Arkiv
       },
     };
+
+    // Si Arkiv está inicializado, registrar el adjunto como entidad
+    try {
+      if (arkivService.isInitialized()) {
+        const { entityKey } = await arkivService.registerAttachment({
+          cid: ipfsResult.cid,
+          filename: ipfsResult.filename,
+          mimeType: ipfsResult.mimeType,
+          size: ipfsResult.size,
+          taskId,
+          gatewayUrl: ipfsResult.gatewayUrl,
+        });
+        response.data.arkivEntityId = entityKey;
+      } else {
+        console.warn('⚠️  Arkiv no inicializado: se omite el registro del adjunto en Arkiv');
+      }
+    } catch (arkivErr) {
+      console.error('⚠️  Error registrando en Arkiv (continuamos):', arkivErr);
+      // No interrumpir el flujo de subida si Arkiv falla; seguimos sin entityId
+    }
 
     res.status(200).json(response);
   } catch (error) {

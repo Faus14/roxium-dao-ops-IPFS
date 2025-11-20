@@ -12,7 +12,8 @@
     "arkiv:register": "node arkiv/register-upload.js",
     "upload:example": "node upload-file.js",
     "test:ipfs:hola": "tsx src/test-ipfs-hola.ts",
-    "test:ipfs:helia-arkiv": "tsx src/test-ipfs-helia-storacha-arkiv.ts"
+    "test:ipfs:helia-arkiv": "tsx src/test-ipfs-helia-storacha-arkiv.ts",
+    "demo:arkiv:voting": "tsx src/examples/arkiv-voting-board.ts"
   },
   "keywords": [
     "ipfs",
@@ -24,6 +25,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@arkiv-network/sdk": "^0.4.5",
     "@helia/unixfs": "^2.0.0",
     "@types/form-data": "^2.2.1",
     "@types/node-fetch": "^2.6.13",
