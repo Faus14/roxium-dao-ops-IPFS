@@ -1,18 +1,48 @@
-// src/api/routes/arkiv-dao.routes.ts
 import { Router } from "express";
 import { z } from "zod";
 
-import { walletClient } from "../../arkiv/clients.js";
+import { walletClient, publicClient } from "../../arkiv/clients.js";
 import { createDaoOnArkiv } from "../../arkiv/dao.js";
 import { createUserOnDaoMembership } from "../../arkiv/membership.js";
+import { eq } from "@arkiv-network/sdk/query";
+import { bytesToString } from "@arkiv-network/sdk/utils";
 
 const router = Router();
 
 const CreateDaoSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  ownerAddress: z.string().optional(), // si no viene, usamos la del wallet del backend
+  ownerAddress: z.string().optional(),
 });
+
+// 🔧 helper: convierte entity Arkiv a algo JSON-friendly
+function normalizeEntity(entity: any) {
+  const attrs: Record<string, string> = Object.fromEntries(
+    (entity.attributes ?? []).map((a: any) => [a.key, a.value])
+  );
+
+  let payload: any = null;
+  if (entity.payload) {
+    const str = bytesToString(entity.payload as Uint8Array);
+    try {
+      payload = JSON.parse(str);
+    } catch {
+      payload = str;
+    }
+  }
+
+  const expiresAtBlock =
+    typeof entity.expiresAtBlock === "bigint"
+      ? entity.expiresAtBlock.toString()
+      : entity.expiresAtBlock ?? null;
+
+  return {
+    entityKey: entity.entityKey as string,
+    attributes: attrs,
+    payload,
+    expiresAtBlock,
+  };
+}
 
 // POST /api/arkiv/daos
 router.post("/", async (req, res) => {
@@ -26,7 +56,6 @@ router.post("/", async (req, res) => {
     const now = new Date().toISOString();
     const owner = ownerAddress ?? walletClient.account.address;
 
-    // 1) Crear DAO en Arkiv
     const { entityKey: daoKey, txHash: daoTxHash } = await createDaoOnArkiv({
       id: Date.now(),
       createdAt: now,
@@ -36,7 +65,6 @@ router.post("/", async (req, res) => {
       version: 1,
     });
 
-    // 2) Crear membership OWNER
     const { entityKey: membershipKey, txHash: membershipTxHash } =
       await createUserOnDaoMembership({
         userAddress: owner,
@@ -69,7 +97,7 @@ const AddMemberSchema = z.object({
 
 // POST /api/arkiv/daos/:daoKey/members
 router.post("/:daoKey/members", async (req, res) => {
-  const { daoKey } = req.params;
+  const daoKey = req.params.daoKey as `0x${string}`;
   const parsed = AddMemberSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -95,6 +123,85 @@ router.post("/:daoKey/members", async (req, res) => {
     console.error("Error adding DAO member in Arkiv:", err);
     return res.status(500).json({
       error: "Failed to add DAO member in Arkiv",
+      details: err?.message,
+    });
+  }
+});
+
+//
+// ====== GETs ======
+//
+
+// GET /api/arkiv/daos/:daoKey
+router.get("/:daoKey", async (req, res) => {
+  const daoKey = req.params.daoKey as `0x${string}`;
+
+  try {
+    const daoEntity = await publicClient.getEntity(daoKey);
+    const dao = normalizeEntity(daoEntity);
+
+    const membershipsResult = await publicClient
+      .buildQuery()
+      .where([eq("type", "user-on-dao"), eq("daoKey", daoKey)])
+      .withAttributes(true)
+      .withPayload(true)
+      .limit(200)
+      .fetch();
+
+    const memberships = membershipsResult.entities.map(normalizeEntity);
+
+    return res.json({
+      daoKey,
+      dao,
+      memberships,
+    });
+  } catch (err: any) {
+    console.error("Error fetching DAO from Arkiv:", err);
+    return res.status(500).json({
+      error: "Failed to fetch DAO from Arkiv",
+      details: err?.message,
+    });
+  }
+});
+
+// GET /api/arkiv/daos/:daoKey/board
+router.get("/:daoKey/board", async (req, res) => {
+  const daoKey = req.params.daoKey as `0x${string}`;
+
+  try {
+    const daoEntity = await publicClient.getEntity(daoKey);
+    const dao = normalizeEntity(daoEntity);
+
+    const proposalsResult = await publicClient
+      .buildQuery()
+      .where([eq("type", "proposal"), eq("daoKey", daoKey)])
+      .withAttributes(true)
+      .withPayload(true)
+      .limit(200)
+      .fetch();
+
+    const proposals = proposalsResult.entities.map(normalizeEntity);
+
+    const tasksResult = await publicClient
+      .buildQuery()
+      .where([eq("type", "task"), eq("daoKey", daoKey)])
+      .withAttributes(true)
+      .withPayload(true)
+      .limit(500)
+      .fetch();
+
+    const tasks = tasksResult.entities.map(normalizeEntity);
+
+    return res.json({
+      daoKey,
+      dao,
+      proposals,
+      tasks,
+    });
+  } catch (err: any) {
+    console.error("Error fetching DAO board from Arkiv:", err);
+    return res.status(500).json({
+      error: "Failed to fetch DAO board from Arkiv",
       details: err?.message,
     });
   }
