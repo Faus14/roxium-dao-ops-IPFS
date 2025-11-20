@@ -44,7 +44,9 @@ function normalizeEntity(entity: any) {
   };
 }
 
-// POST /api/arkiv/daos
+// -----------------------------------------------------
+// POST /api/arkiv/daos  → crear DAO + membership OWNER
+// -----------------------------------------------------
 router.post("/", async (req, res) => {
   const parsed = CreateDaoSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -90,12 +92,42 @@ router.post("/", async (req, res) => {
   }
 });
 
+// -----------------------------------------------------
+// GET /api/arkiv/daos  → obtener TODOS los DAOs
+// -----------------------------------------------------
+router.get("/", async (_req, res) => {
+  try {
+    const result = await publicClient
+      .buildQuery()
+      .where([eq("type", "dao")])
+      .withAttributes(true)
+      .withPayload(true)
+      .limit(200) // ajustar si hiciera falta
+      .fetch();
+
+    const daos = result.entities.map(normalizeEntity);
+
+    return res.json({
+      count: daos.length,
+      daos,
+    });
+  } catch (err: any) {
+    console.error("Error fetching all DAOs from Arkiv:", err);
+    return res.status(500).json({
+      error: "Failed to fetch DAOs from Arkiv",
+      details: err?.message,
+    });
+  }
+});
+
 const AddMemberSchema = z.object({
   userAddress: z.string(),
   role: z.enum(["OWNER", "CONTRIBUTOR", "VIEWER"]).default("CONTRIBUTOR"),
 });
 
-// POST /api/arkiv/daos/:daoKey/members
+// -----------------------------------------------------
+// POST /api/arkiv/daos/:daoKey/members  → agregar miembro
+// -----------------------------------------------------
 router.post("/:daoKey/members", async (req, res) => {
   const daoKey = req.params.daoKey as `0x${string}`;
   const parsed = AddMemberSchema.safeParse(req.body);
@@ -128,11 +160,9 @@ router.post("/:daoKey/members", async (req, res) => {
   }
 });
 
-//
-// ====== GETs ======
-//
-
-// GET /api/arkiv/daos/:daoKey
+// -----------------------------------------------------
+// GET /api/arkiv/daos/:daoKey  → DAO + memberships
+// -----------------------------------------------------
 router.get("/:daoKey", async (req, res) => {
   const daoKey = req.params.daoKey as `0x${string}`;
 
@@ -164,7 +194,9 @@ router.get("/:daoKey", async (req, res) => {
   }
 });
 
-// GET /api/arkiv/daos/:daoKey/board
+// -----------------------------------------------------
+// GET /api/arkiv/daos/:daoKey/board  → DAO + proposals + tasks
+// -----------------------------------------------------
 router.get("/:daoKey/board", async (req, res) => {
   const daoKey = req.params.daoKey as `0x${string}`;
 

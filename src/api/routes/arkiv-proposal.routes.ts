@@ -45,7 +45,9 @@ function normalizeEntity(entity: any) {
   };
 }
 
-// POST /api/arkiv/proposals
+// -----------------------------------------------------
+// POST /api/arkiv/proposals  → crear proposal
+// -----------------------------------------------------
 router.post("/", async (req, res) => {
   const parsed = CreateProposalSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -82,8 +84,36 @@ router.post("/", async (req, res) => {
   }
 });
 
+// -----------------------------------------------------
+// GET /api/arkiv/proposals  → obtener TODAS las proposals
+// -----------------------------------------------------
+router.get("/", async (_req, res) => {
+  try {
+    const result = await publicClient
+      .buildQuery()
+      .where([eq("type", "proposal")])
+      .withAttributes(true)
+      .withPayload(true)
+      .limit(500)
+      .fetch();
+
+    const proposals = result.entities.map(normalizeEntity);
+
+    return res.json({
+      count: proposals.length,
+      proposals,
+    });
+  } catch (err: any) {
+    console.error("Error fetching all proposals from Arkiv:", err);
+    return res.status(500).json({
+      error: "Failed to fetch proposals from Arkiv",
+      details: err?.message,
+    });
+  }
+});
+
 //
-// ====== GETs ======
+// ====== GETs específicos ======
 //
 
 // GET /api/arkiv/proposals/by-dao/:daoKey

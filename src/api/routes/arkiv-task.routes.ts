@@ -46,7 +46,9 @@ function normalizeEntity(entity: any) {
   };
 }
 
-// POST /api/arkiv/tasks
+// -----------------------------------------------------
+// POST /api/arkiv/tasks  → crear task
+// -----------------------------------------------------
 router.post("/", async (req, res) => {
   const parsed = CreateTaskSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -92,8 +94,36 @@ router.post("/", async (req, res) => {
   }
 });
 
+// -----------------------------------------------------
+// GET /api/arkiv/tasks  → obtener TODAS las tasks
+// -----------------------------------------------------
+router.get("/", async (_req, res) => {
+  try {
+    const result = await publicClient
+      .buildQuery()
+      .where([eq("type", "task")])
+      .withAttributes(true)
+      .withPayload(true)
+      .limit(1000)
+      .fetch();
+
+    const tasks = result.entities.map(normalizeEntity);
+
+    return res.json({
+      count: tasks.length,
+      tasks,
+    });
+  } catch (err: any) {
+    console.error("Error fetching all tasks from Arkiv:", err);
+    return res.status(500).json({
+      error: "Failed to fetch tasks from Arkiv",
+      details: err?.message,
+    });
+  }
+});
+
 //
-// ====== GETs ======
+// ====== GETs específicos ======
 //
 
 // GET /api/arkiv/tasks/by-proposal/:proposalKey
