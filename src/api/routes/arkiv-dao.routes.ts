@@ -1,3 +1,4 @@
+// src/api/routes/arkiv-dao.routes.ts
 import { Router } from "express";
 import { z } from "zod";
 
@@ -15,13 +16,40 @@ const CreateDaoSchema = z.object({
   ownerAddress: z.string().optional(),
 });
 
+/**
+ * Intenta extraer la "clave" de la entidad Arkiv.
+ * Arkiv siempre tiene un identificador, pero según la versión del SDK
+ * puede venir como `entityKey`, `key`, `id`, etc.
+ */
+function extractEntityKey(entity: any): string | null {
+  if (!entity) return null;
+
+  if (typeof entity.entityKey === "string") return entity.entityKey;
+  if (typeof entity.key === "string") return entity.key;
+  if (typeof entity.id === "string") return entity.id;
+
+  // fallback: si la guardaste como atributo en algún momento
+  if (Array.isArray(entity.attributes)) {
+    const found = entity.attributes.find(
+      (a: any) => a && a.key === "entityKey"
+    );
+    if (found && typeof found.value === "string") {
+      return found.value;
+    }
+  }
+
+  return null;
+}
+
 // 🔧 helper: convierte entity Arkiv a algo JSON-friendly
 function normalizeEntity(entity: any) {
+  const entityKey = extractEntityKey(entity);
+
   const attrs: Record<string, string> = Object.fromEntries(
     (entity.attributes ?? []).map((a: any) => [a.key, a.value])
   );
 
-  let payload: any = null;
+  let payload: unknown = null;
   if (entity.payload) {
     const str = bytesToString(entity.payload as Uint8Array);
     try {
@@ -37,7 +65,8 @@ function normalizeEntity(entity: any) {
       : entity.expiresAtBlock ?? null;
 
   return {
-    entityKey: entity.entityKey as string,
+    // 👇 ahora SIEMPRE va en la respuesta (aunque sea null)
+    entityKey,
     attributes: attrs,
     payload,
     expiresAtBlock,
@@ -102,7 +131,7 @@ router.get("/", async (_req, res) => {
       .where([eq("type", "dao")])
       .withAttributes(true)
       .withPayload(true)
-      .limit(200) // ajustar si hiciera falta
+      .limit(200)
       .fetch();
 
     const daos = result.entities.map(normalizeEntity);

@@ -1,3 +1,4 @@
+// src/api/routes/arkiv-task.routes.ts
 import { Router } from "express";
 import { z } from "zod";
 
@@ -9,8 +10,8 @@ import { bytesToString } from "@arkiv-network/sdk/utils";
 const router = Router();
 
 const CreateTaskSchema = z.object({
-  proposalKey: z.string(),
-  daoKey: z.string(),
+  proposalKey: z.string().min(1),
+  daoKey: z.string().min(1),
   title: z.string().min(1),
   description: z.string().optional(),
   budget: z.number().optional(),
@@ -18,12 +19,38 @@ const CreateTaskSchema = z.object({
   status: z.enum(["todo", "in-progress", "done"]).default("todo"),
 });
 
+/**
+ * Igual que en DAOs y Proposals: extraemos la key real de la entidad Arkiv.
+ */
+function extractEntityKey(entity: any): string | null {
+  if (!entity) return null;
+
+  if (typeof entity.entityKey === "string") return entity.entityKey;
+  if (typeof entity.key === "string") return entity.key;
+  if (typeof entity.id === "string") return entity.id;
+
+  // fallback: si alguna vez se guardó como atributo
+  if (Array.isArray(entity.attributes)) {
+    const found = entity.attributes.find(
+      (a: any) => a && a.key === "entityKey"
+    );
+    if (found && typeof found.value === "string") {
+      return found.value;
+    }
+  }
+
+  return null;
+}
+
+// 🔧 helper: convierte entity Arkiv a algo JSON-friendly (INCLUYENDO entityKey)
 function normalizeEntity(entity: any) {
+  const entityKey = extractEntityKey(entity);
+
   const attrs: Record<string, string> = Object.fromEntries(
     (entity.attributes ?? []).map((a: any) => [a.key, a.value])
   );
 
-  let payload: any = null;
+  let payload: unknown = null;
   if (entity.payload) {
     const str = bytesToString(entity.payload as Uint8Array);
     try {
@@ -39,7 +66,7 @@ function normalizeEntity(entity: any) {
       : entity.expiresAtBlock ?? null;
 
   return {
-    entityKey: entity.entityKey as string,
+    entityKey, // 👈 clave para el front
     attributes: attrs,
     payload,
     expiresAtBlock,
@@ -81,8 +108,12 @@ router.post("/", async (req, res) => {
       version: 1,
     });
 
+    console.log("✅ Task creada en Arkiv:", { entityKey, txHash });
+
     return res.status(201).json({
       taskKey: entityKey,
+      daoKey,
+      proposalKey,
       txHash,
     });
   } catch (err: any) {
