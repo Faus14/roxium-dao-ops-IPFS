@@ -14,6 +14,7 @@
     "test:ipfs:hola": "tsx src/test-ipfs-hola.ts",
     "test:ipfs:helia-arkiv": "tsx src/test-ipfs-helia-storacha-arkiv.ts",
     "demo:arkiv:voting": "tsx src/examples/arkiv-voting-board.ts",
+    "demo:arkiv:query": "tsx src/examples/query-dao-entities.ts",
     "ipfs:storacha:arkiv": "tsx src/ipfs-storacha-arkiv.ts"
   },
   "keywords": [
